@@ -1,0 +1,77 @@
+{
+	"min_len" : 0.01,
+	"avg_len" : 0.5,
+	"max_len" : 1,
+	"colorscheme" : [
+		{
+			"value_to_map_to_this_color" : 0.6,
+			"color_space" : "sRGB",
+			"format" : "hex",
+			"color" : "#DC143C",
+			"kwargs" : {}
+		},
+		{
+			"value_to_map_to_this_color" : 1.5,
+			"color_space" : "sRGB",
+			"format" : "hex",
+			"color" : "#1474DC",
+			"kwargs" : {}
+		},
+		{
+			"value_to_map_to_this_color" : 7,
+			"color_space" : "sRGB",
+			"format" : "num",
+			"color" : [ 1.0, 0.0, 1.0 ],
+			"kwargs" : {}
+		},
+		{
+			"value_to_map_to_this_color" : 1.25,
+			"color_space" : "sRGB",
+			"format" : "hex",
+			"color" : "#80FFC8",
+			"kwargs" : {}
+		}
+	],
+	"vectors" : [
+		{
+			"pos" : [ 0, 0, 0 ],
+			"vec" : [ 0, 1, 0 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 0, 0, 0 ],
+			"vec" : [ 1, 0, 0 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 1, 0, 0 ],
+			"vec" : [ 10, 10, 0 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 3, 0, 0 ],
+			"vec" : [ 0.25, 0.25, 0 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 0, -3, 0 ],
+			"vec" : [ 0.0125, 0.0125, 0 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 0, -1, -1 ],
+			"vec" : [ 1, -2, -1 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 0, -1, 0 ],
+			"vec" : [ 1, 0, -1 ],
+			"rot" : 0
+		},
+		{
+			"pos" : [ 1, 0, 0 ],
+			"vec" : [ 1, 0, 1 ],
+			"rot" : 0
+		}
+	]
+}
