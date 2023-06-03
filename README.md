@@ -26,6 +26,15 @@ You can see the exact syntax for creating a `Vector_Field` object and for
 calling the `generate_vector_field` function at the bottom of
 [`generate_vector_field.py`](generate_vector_field.py).
 
+# The Arrows
+
+The arrows can be any `.obj` you like, but you need to make sure to do two things:
+
+1.  Export them so that the positive z direction is up and the positive x
+    direction is forward.
+1.  Do not export them with any materials or you're never going to have to
+    search through thousands of unused materials to find the right one.
+
 # Notes
 
 First, you can and probably should use another programming language to generate
@@ -73,7 +82,21 @@ Currently, there are five main things in the json file.
     - `col`: (Optional) By default, vectors are colored by their length. If you
       want to override it, provide this option.
 
+# Improvements
+
 I'm probably going to add more to this later, specifically for animation, but
 not right now. If someone were to [pay me](https://ko-fi.com/josephmellor), I
 might be more motivated to move forward with this script. Otherwise, I'm only
 going to update the script when I need to update it.
+
+# Contributions
+
+You can also contribute through the standard github way. I will accept any
+contribution that adds a new feature that adds a new feature or fixes a bug as
+long as doing so does not lead to unnecessary entanglement with other code bases
+or systems. For example, I will not accept a pull request that generates the
+json inside the script or tries to get around the json file in any way. Adding
+such code is like tying your shoes together so that you only have to tie them
+once. On the other hand, adding a new feature like animation to the json file is
+something I'd probably accept, especially if it can be done without breaking
+compatibility with older versions.
