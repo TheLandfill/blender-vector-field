@@ -31,14 +31,14 @@ obj = {
             "kwargs" : {}
         },
         {
-            "value_to_map_to_this_color" : -1.0 / 6.0,
+            "value_to_map_to_this_color" : -1.0 / 12.0,
             "color_space" : "sRGB",
             "format" : "hex",
             "color" : "#AAAAAA",
             "kwargs" : {}
         },
         {
-            "value_to_map_to_this_color" :  1.0 / 6.0,
+            "value_to_map_to_this_color" :  1.0 / 12.0,
             "color_space" : "sRGB",
             "format" : "hex",
             "color" : "#AAAAAA",
@@ -99,24 +99,12 @@ def add_field_vec(point):
         )
     )
     potential = sum(
-        1.25 * q / r
+        3.0 * q / r
         for q, r in zip(
             charge_mag,
             mag_list
         )
     )
-    point_check = np.array([2.0, 0.0, 0.0])
-    point_check -= point
-    if np.dot(point_check, point_check) < 1e-7:
-        print("point = ", end = '')
-        pprint(point)
-        print("dist_vec = ", end = '')
-        pprint(dist_vec)
-        print("sqr_mag_list = ", end = '')
-        pprint(sqr_mag_list)
-        print("field_vec = ", end = '')
-        pprint(field_vec)
-        print("potential = {}".format(potential))
     obj["vectors"].append({
         "pos" : point.tolist(),
         "vec" : field_vec.tolist(),

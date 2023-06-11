@@ -5,6 +5,7 @@ import math as m
 from pprint import pprint
 
 obj = {
+    "min_len" : 0.01,
     "avg_len" : 0.9,
     "max_len" : 1,
     "colorscheme" : [
@@ -90,9 +91,10 @@ print("Number of Points: {}".format(len(point_indices)))
 for point_index in point_indices:
     point = sample[point_index]
     sqr_mag = np.dot(point, point)
+    mag = np.sqrt(sqr_mag)
     obj["vectors"].append({
         "pos" : point.tolist(),
-        "vec" : (point / sqr_mag).tolist()
+        "vec" : (point / sqr_mag / mag).tolist()
     })
 
 with open("random-diverging-field.json", "w") as writer:

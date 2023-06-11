@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import json
+from seaborn import kdeplot
+import matplotlib.pyplot as plt
+import numpy as np
 
 obj = {
     "min_len" : 0.01,
@@ -47,10 +50,14 @@ for i in range(-half_side_length, half_side_length + 1):
             if i == 0 and j == 0 and k == 0:
                 continue
             sqr_mag = i * i + j * j + k * k
+            mag = sqr_mag ** 0.5
             obj["vectors"].append({
                 "pos" : [ 2.0 * i, 2.0 * j, 2.0 * k ],
-                "vec" : [ i / sqr_mag, j / sqr_mag, k / sqr_mag ],
+                "vec" : [ i / sqr_mag / mag, j / sqr_mag / mag, k / sqr_mag / mag ],
             })
+
+#kdeplot([ np.linalg.norm(vec["vec"]) for vec in obj["vectors"] ])
+#plt.show()
 
 with open("diverging-field.json", "w") as writer:
     json.dump(obj, writer)

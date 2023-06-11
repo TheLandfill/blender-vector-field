@@ -24,20 +24,6 @@ color_space_text_to_color_object = {
     "IPT" : CO.IPTColor
 }
 
-def rotation_matrix_to_euler_angles(mat):
-    sy = math.sqrt(mat[0,0] * mat[0,0] +  mat[1,0] * mat[1,0])
-    singular = sy < 1e-6
-    if not singular:
-        x = math.atan2(mat[2,1] , mat[2,2])
-        y = math.atan2(-mat[2,0], sy)
-        z = math.atan2(mat[1,0], mat[0,0])
-    else:
-        x = math.atan2(-mat[1,2], mat[1,1])
-        y = math.atan2(-mat[2,0], sy)
-        z = 0
-    return np.array([x, y, z])
-
-
 class Vector_Field:
     def __init__(self, filename):
         data = None
@@ -82,6 +68,7 @@ class Vector_Field:
                 arg_list = unparsed_color["color"]
             else:
                 print("ERROR: We only support hex and num formats.")
+                return
             if "kwargs" in unparsed_color:
                 key_word_args = unparsed_color["kwargs"]
             self.colorscheme.append(

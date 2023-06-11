@@ -5,6 +5,7 @@ import math as m
 from pprint import pprint
 
 obj = {
+    "min_len" : 0.01,
     "avg_len" : 1.0,
     "max_len" : 1.0,
     "colorscheme" : [
@@ -120,9 +121,10 @@ def gen_stable_vector_field():
                 if i == 0 and j == 0 and k == 0:
                     continue
                 sqr_mag = i * i + j * j + k * k
+                mag = sqr_mag ** 0.5
                 obj["vectors"].append({
                     "pos" : [ i * 1.5, j * 1.5, k * 1.5 ],
-                    "vec" : [ i / sqr_mag, j / sqr_mag, k / sqr_mag ],
+                    "vec" : [ i / sqr_mag / mag, j / sqr_mag / mag, k / sqr_mag / mag ],
                 })
 
 gen_random_vector_field()
