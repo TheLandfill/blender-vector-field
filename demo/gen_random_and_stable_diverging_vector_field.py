@@ -106,9 +106,10 @@ def gen_random_vector_field():
     for point_index in point_indices:
         point = sample[point_index]
         sqr_mag = np.dot(point, point)
+        mag = np.sqrt(sqr_mag)
         obj["vectors"].append({
             "pos" : [ 1.5 * k for k in point.tolist() ],
-            "vec" : (point / sqr_mag).tolist()
+            "vec" : (point / sqr_mag / mag).tolist()
         })
 
 
@@ -121,7 +122,7 @@ def gen_stable_vector_field():
                 if i == 0 and j == 0 and k == 0:
                     continue
                 sqr_mag = i * i + j * j + k * k
-                mag = sqr_mag ** 0.5
+                mag = np.sqrt(sqr_mag)
                 obj["vectors"].append({
                     "pos" : [ i * 1.5, j * 1.5, k * 1.5 ],
                     "vec" : [ i / sqr_mag / mag, j / sqr_mag / mag, k / sqr_mag / mag ],
