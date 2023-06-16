@@ -56,8 +56,8 @@ for i in range(-half_side_length, half_side_length + 1):
                 "vec" : [ i / sqr_mag / mag, j / sqr_mag / mag, k / sqr_mag / mag ],
             })
 
-#kdeplot([ np.linalg.norm(vec["vec"]) for vec in obj["vectors"] ])
-#plt.show()
+kdeplot([ np.linalg.norm(vec["vec"]) for vec in obj["vectors"] ])
+plt.show()
 
 with open("diverging-field.json", "w") as writer:
     json.dump(obj, writer)

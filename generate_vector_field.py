@@ -2,7 +2,7 @@ import numpy as np
 from colormath.color_conversions import convert_color
 import colormath.color_objects as CO
 import bpy
-import json
+import orjson as json
 from pprint import pprint
 import math
 import mathutils
@@ -32,13 +32,16 @@ class Vector_Field:
         self.avg_len = data["avg_len"]
         self.min_len = data["min_len"]
         self.max_len = data["max_len"]
+        self.frame_offset = data["frame_offset"] if "frame_offset" in data else 0
+        self.cur_frame = frame_offset
         self.colorscheme = None
         self.parse_colorscheme(data["colorscheme"])
-        self.pos_list = [ k["pos"] for k in data["vectors"] ]
-        self.vec_list = [ k["vec"] for k in data["vectors"] ]
-        self.rot_list = [ k["rot"] if "rot" in k else 0.0 for k in data["vectors"] ]
-        self.col_list = [ k["col"] if "col" in k else None for k in data["vectors"] ]
-    
+        self.vec_list = data["vectors"]
+        #self.pos_list = [ k["pos"] for k in data["vectors"] ]
+        #self.vec_list = [ k["vec"] for k in data["vectors"] ]
+        #self.rot_list = [ k["rot"] if "rot" in k else 0.0 for k in data["vectors"] ]
+        #self.col_list = [ k["col"] if "col" in k else None for k in data["vectors"] ]
+
     def parse_colorscheme(self, unparsed_colorscheme):
         self.colorscheme = []
         for unparsed_color in unparsed_colorscheme:
@@ -73,7 +76,7 @@ class Vector_Field:
                 key_word_args = unparsed_color["kwargs"]
             self.colorscheme.append(
                 (
-                    val, 
+                    val,
                     convert_color(color_space(*arg_list, **key_word_args), CO.LCHuvColor)
                 )
             )
@@ -87,7 +90,7 @@ class Vector_Field:
     ):
         collection = bpy.data.collections.new(collection_name)
         bpy.context.scene.collection.children.link(collection)
-        
+
         # Get material
         material = bpy.data.materials.get("arrow-material")
         if material is None:
@@ -98,24 +101,14 @@ class Vector_Field:
         base = bpy.context.selected_objects[-1]
         base.name = collection_name + '-base-vec'
 
-        for pos, vec, rot, col in zip(self.pos_list, self.vec_list, self.rot_list, self.col_list):
-            l_in = np.linalg.norm(vec)
-            len_scale = self.max_len * self.ratio_to_successor_between_zero_and_one(l_in)
-            if len_scale < self.min_len:
-                continue
-            color = None
-            if col == None:
-                color = self.calc_color(l_in)
-            else:
-                color = self.calc_color(col)
-
-            obj = Vector_Field.generate_vector(pos, vec, rot, len_scale, color, base)
+        for vec in self.vec_list:
+            obj = self.generate_vector(base, vec)
             for coll in obj.users_collection:
                 # Unlink the object
                 coll.objects.unlink(obj)
 
             bpy.data.collections[collection_name].objects.link(obj)
-            
+
             # Assign it to object
             if obj.data.materials:
                 # assign to 1st material slot
@@ -129,8 +122,7 @@ class Vector_Field:
         self,
         l_in
     ):
-        l_in /= self.avg_len
-        return l_in / (l_in + 1.0)
+        return l_in / (l_in + self.avg_len)
 
     #Needs to do an LCh interpolation between two adjacent colors
     def calc_color(
@@ -173,20 +165,112 @@ class Vector_Field:
     # Also need to set color here. Color should be a property
     # Also need to set material here.
     def generate_vector(
-        pos,
-        vec,
-        rot,
-        l_out,
-        color,
-        base
+        self,
+        base,
+        vector
     ):
         obj = base.copy()
+        if type(vector) == dict:
+            self.handle_single_vec(obj, vector)
+        elif type(vector) == list:
+            self.handle_single_vec(obj, vec)
+            self.cur_frame = self.frame_offset
+            for cur_vec in vector[1:]:
+                self.handle_keyframe(obj, cur_vec)
+        return obj
+
+    def handle_single_vec(
+        self,
+        obj,
+        vector
+    ):
+        pos = None
+        vec = None
+        if "pos" not in vector:
+            print("ERROR: Need to define pos in the first vector in the list.")
+            return
+        else:
+            pos = vector["pos"]
+        if "vec" not in vector:
+            print("ERROR: Need to define vec in the first vector in the list.")
+            return
+        else:
+            vec = vector["vec"]
+        rot = vector["rot"] if "rot" in vector else 0.0
+        col = vector["col"] if "col" in vector else None
+        l_in = np.linalg.norm(vec)
+        l_out = self.max_len * self.ratio_to_successor_between_zero_and_one(l_in)
+        color = None
+        if col == None:
+            color = self.calc_color(l_in)
+        else:
+            color = self.calc_color(col)
         obj.name = str(pos) + "--" + str(vec)
         obj.location = np.array(pos)
         obj.rotation_euler = Vector_Field.get_rot(vec, rot)
         obj.scale = np.array([l_out, l_out, l_out])
         obj["arrow-color"] = color.get_value_tuple()
-        return obj
+        if l_in < self.min_len:
+            obj.hide_render = True
+
+    def handle_keyframe(
+        self,
+        obj,
+        vector
+    ):
+        if "frame" in vector:
+            self.cur_frame = vector["frame"]
+        else:
+            self.cur_frame += 1
+        if "pos" in vector:
+            obj.location = vector["pos"]
+            obj.keyframe_insert(data_path="location", frame=self.cur_frame)
+            if "pos_interpolation" in vector:
+                action = bpy.data.actions.get(obj.animation_data.action.name)
+                my_fcu = my_action.fcurves.find("location", index = 1)
+                if vector["pos_interpolation"] == "linear":
+                    my_fcu.keyframe_points[-1].interpolation = 'LINEAR'
+                elif vector["pos_interpolation"] == "teleport":
+                    my_fcu.keyframe_points[-1].interpolation = 'CONSTANT'
+                my_fcu.update()
+        rot = 0.0
+        if "rot" in vector:
+            rot = vector["rot"]
+        if "vec" in vector:
+            vec = vector["vec"]
+            obj.rotation_euler = Vector_Field.get_rot(vec, rot)
+            obj.keyframe_insert(data_path="rotation_euler", frame=self.cur_frame)
+            if "vec_interpolation" in vector:
+                action = bpy.data.actions.get(obj.animation_data.action.name)
+                my_fcu = my_action.fcurves.find("rotation_euler", index = 1)
+                if vector["vec_interpolation"] == "linear":
+                    my_fcu.keyframe_points[-1].interpolation = 'LINEAR'
+                elif vector["vec_interpolation"] == "teleport":
+                    my_fcu.keyframe_points[-1].interpolation = 'CONSTANT'
+                my_fcu.update()
+            l_in = np.linalg.norm(vec)
+            if l_in < self.min_len or ("visible" in vector and vector["visible"] == false):
+                obj.hide_render = True
+                obj.keyframe_insert(data_path="hide_render", frame=self.cur_frame)
+            l_out = self.max_len * self.ratio_to_successor_between_zero_and_one(l_in)
+            obj.scale = np.array([l_out, l_out, l_out])
+            obj.keyframe_insert(data_path="scale", frame=self.cur_frame)
+            if "vec_interpolation" in vector:
+                action = bpy.data.actions.get(obj.animation_data.action.name)
+                my_fcu = my_action.fcurves.find("scale", index = 1)
+                if vector["vec_interpolation"] == "linear":
+                    my_fcu.keyframe_points[-1].interpolation = 'LINEAR'
+                elif vector["vec_interpolation"] == "teleport":
+                    my_fcu.keyframe_points[-1].interpolation = 'CONSTANT'
+                my_fcu.update()
+        col = vector["col"] if "col" in vector else None
+        color = None
+        if col == None:
+            color = self.calc_color(l_in)
+        else:
+            color = self.calc_color(col)
+        obj["arrow-color"] = color.get_value_tuple()
+        obj.keyframe_insert(data_path="arrow-color", frame=self.cur_frame)
 
     def get_rot(vec, rot):
         first_rot = mathutils.Matrix.Rotation(rot, 3, np.array([0, 0, 1]))
@@ -200,12 +284,12 @@ class Vector_Field:
         if a_len < 1.0e-7:
             rot_mat = mathutils.Matrix.Diagonal([1, -1, -1])
             return (rot_mat @ first_rot).to_euler()
-            
+
         axis /= a_len
         rot_mat = mathutils.Matrix.Rotation(math.pi, 3, [0, 0, 1]) @ mathutils.Matrix.Rotation(angle, 3, axis) @ first_rot
-        
+
         return rot_mat.to_euler()
-    
+
 # EDIT THESE LINES TO FIT YOUR SPECIFIC CIRCUMSTANCE
 
 #vec_field = Vector_Field("/path/to/json/file/that/has/the/data.json")
