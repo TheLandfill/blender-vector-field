@@ -25,18 +25,19 @@ color_space_text_to_color_object = {
 }
 
 class Vector_Field:
-    def __init__(self, filename):
+    def __init__(self, filename, start_frame = 0):
         data = None
-        with open(filename, "r") as reader:
-            data = json.load(reader)
+        with open(filename, "rb") as reader:
+            data = json.loads(reader.read())
         self.avg_len = data["avg_len"]
         self.min_len = data["min_len"]
         self.max_len = data["max_len"]
         self.frame_offset = data["frame_offset"] if "frame_offset" in data else 0
-        self.cur_frame = frame_offset
+        self.cur_frame = start_frame
         self.colorscheme = None
         self.parse_colorscheme(data["colorscheme"])
         self.vec_list = data["vectors"]
+        self.prev_vec = None
         #self.pos_list = [ k["pos"] for k in data["vectors"] ]
         #self.vec_list = [ k["vec"] for k in data["vectors"] ]
         #self.rot_list = [ k["rot"] if "rot" in k else 0.0 for k in data["vectors"] ]
@@ -173,7 +174,7 @@ class Vector_Field:
         if type(vector) == dict:
             self.handle_single_vec(obj, vector)
         elif type(vector) == list:
-            self.handle_single_vec(obj, vec)
+            self.handle_single_vec(obj, vector)
             self.cur_frame = self.frame_offset
             for cur_vec in vector[1:]:
                 self.handle_keyframe(obj, cur_vec)
@@ -196,6 +197,7 @@ class Vector_Field:
             return
         else:
             vec = vector["vec"]
+        self.prev_vec = vec
         rot = vector["rot"] if "rot" in vector else 0.0
         col = vector["col"] if "col" in vector else None
         l_in = np.linalg.norm(vec)
@@ -227,7 +229,7 @@ class Vector_Field:
             obj.keyframe_insert(data_path="location", frame=self.cur_frame)
             if "pos_interpolation" in vector:
                 action = bpy.data.actions.get(obj.animation_data.action.name)
-                my_fcu = my_action.fcurves.find("location", index = 1)
+                my_fcu = action.fcurves.find("location", index = 1)
                 if vector["pos_interpolation"] == "linear":
                     my_fcu.keyframe_points[-1].interpolation = 'LINEAR'
                 elif vector["pos_interpolation"] == "teleport":
@@ -236,20 +238,22 @@ class Vector_Field:
         rot = 0.0
         if "rot" in vector:
             rot = vector["rot"]
+        l_in = np.linalg.norm(self.prev_vec)
         if "vec" in vector:
             vec = vector["vec"]
+            self.prev_vec = vec
             obj.rotation_euler = Vector_Field.get_rot(vec, rot)
             obj.keyframe_insert(data_path="rotation_euler", frame=self.cur_frame)
             if "vec_interpolation" in vector:
                 action = bpy.data.actions.get(obj.animation_data.action.name)
-                my_fcu = my_action.fcurves.find("rotation_euler", index = 1)
+                my_fcu = action.fcurves.find("rotation_euler", index = 1)
                 if vector["vec_interpolation"] == "linear":
                     my_fcu.keyframe_points[-1].interpolation = 'LINEAR'
                 elif vector["vec_interpolation"] == "teleport":
                     my_fcu.keyframe_points[-1].interpolation = 'CONSTANT'
                 my_fcu.update()
             l_in = np.linalg.norm(vec)
-            if l_in < self.min_len or ("visible" in vector and vector["visible"] == false):
+            if l_in < self.min_len or ("visible" in vector and vector["visible"] == False):
                 obj.hide_render = True
                 obj.keyframe_insert(data_path="hide_render", frame=self.cur_frame)
             l_out = self.max_len * self.ratio_to_successor_between_zero_and_one(l_in)
@@ -257,7 +261,7 @@ class Vector_Field:
             obj.keyframe_insert(data_path="scale", frame=self.cur_frame)
             if "vec_interpolation" in vector:
                 action = bpy.data.actions.get(obj.animation_data.action.name)
-                my_fcu = my_action.fcurves.find("scale", index = 1)
+                my_fcu = action.fcurves.find("scale", index = 1)
                 if vector["vec_interpolation"] == "linear":
                     my_fcu.keyframe_points[-1].interpolation = 'LINEAR'
                 elif vector["vec_interpolation"] == "teleport":
@@ -270,7 +274,7 @@ class Vector_Field:
         else:
             color = self.calc_color(col)
         obj["arrow-color"] = color.get_value_tuple()
-        obj.keyframe_insert(data_path="arrow-color", frame=self.cur_frame)
+        obj.keyframe_insert(data_path='["arrow-color"]', frame=self.cur_frame)
 
     def get_rot(vec, rot):
         first_rot = mathutils.Matrix.Rotation(rot, 3, np.array([0, 0, 1]))
